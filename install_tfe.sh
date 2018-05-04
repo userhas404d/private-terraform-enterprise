@@ -1,8 +1,8 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
 # DESCRIPTION
-# The Terraform Enterprise Install script installs and configures ServiceNow on
-# the ec2 instances.
+# The Terraform Enterprise Install script installs and configures Terraform
+# Enterprise on an ec2 instance.
 #
 # filename - install_tfe.sh
 #

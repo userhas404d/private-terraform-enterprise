@@ -16,6 +16,7 @@ variable "sg_allow_inbound_from" {}
 
 # lx-instance
 variable "ami_id" {}
+
 variable "instance_role" {}
 variable "key_pair" {}
 variable "priv_subnet" {}
