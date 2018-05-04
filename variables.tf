@@ -19,3 +19,4 @@ variable "ami_id" {}
 variable "instance_role" {}
 variable "key_pair" {}
 variable "priv_subnet" {}
+variable "appscript_url" {}

@@ -63,6 +63,7 @@ module "lx-instance" {
   AmiDistro        = "CentOS"
   AppVolumeDevice  = "true"
   AppVolumeSize    = "40"
+  AppScriptUrl     = "${var.appscript_url}"
   KeyPairName      = "${var.key_pair}"
   InstanceType     = "t2.large"
   InstanceRole     = "${var.instance_role}"
