@@ -18,6 +18,13 @@ variable "sg_allow_inbound_from" {}
 variable "ami_id" {}
 
 variable "instance_role" {}
+
+variable "instance_type" {
+  default = "t2.large"
+}
+
 variable "key_pair" {}
 variable "priv_subnet" {}
 variable "appscript_url" {}
+
+variable "template_source" {}

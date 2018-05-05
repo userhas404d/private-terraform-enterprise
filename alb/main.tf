@@ -9,7 +9,7 @@ resource "aws_lb" "public" {
   security_groups    = ["${var.pub_access_sg}"]
   subnets            = ["${var.pub_subnets}"]
 
-  enable_deletion_protection = true
+  enable_deletion_protection = false
 
   tags {
     Environment = "${var.env_type}"
