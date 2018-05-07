@@ -1,4 +1,4 @@
-# general
+# generalg
 variable "aws_region" {}
 
 variable "env_type" {

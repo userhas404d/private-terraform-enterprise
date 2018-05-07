@@ -3,23 +3,31 @@ provider "aws" {
 }
 
 locals {
-  tfe_name = "${var.alias_name}-${var.env_type}"
+  tfe_name        = "${var.alias_name}-${var.env_type}"
+  domain_name     = "${var.alias_name}.${var.target_r53_zone}"
+  target_r53_zone = "${var.target_r53_zone}."
 }
 
-# create the alb
+# create the alb, associated target groups, and certificate
 module "alb" {
-  source        = "alb/"
-  alb_name      = "${var.alias_name}-${var.env_type}"
-  pub_access_sg = "${var.pub_access_sg}"
-  pub_subnets   = "${var.pub_subnets}"
-  env_type      = "${var.env_type}"
+  source                   = "alb/"
+  alb_name                 = "${local.tfe_name}-alb"
+  pub_access_sg            = "${var.pub_access_sg}"
+  pub_subnets              = "${var.pub_subnets}"
+  env_type                 = "${var.env_type}"
+  https_target_group_name  = "${local.tfe_name}-https-target-group"
+  config_target_group_name = "${local.tfe_name}-config-target-group"
+  aws_lb_target_group_vpc  = "${var.pub_access_vpc_id}"
+  target_instance_id       = "${module.lx-instance.watchmaker-lx-instance-id}"
+  r53_zone_id              = "${module.dns.zone_id}"
+  domain_name              = "${local.domain_name}"
 }
 
 # create the associated a record for the alb
 module "dns" {
   source          = "dns/"
   alias_name      = "${var.alias_name}"
-  target_r53_zone = "${var.target_r53_zone}"
+  target_r53_zone = "${local.target_r53_zone}"
   alb_dns_name    = "${module.alb.dns_name}"
   alb_zone_id     = "${module.alb.zone_id}"
 }
@@ -71,12 +79,11 @@ module "lx-instance" {
   KeyPairName      = "${var.key_pair}"
   InstanceType     = "${var.instance_type}"
   InstanceRole     = "${var.instance_role}"
-  NoPublicIp       = "false"
   SecurityGroupIds = "${module.sg.private_sg_id}"
   SubnetId         = "${var.priv_subnet}"
 }
 
-# create the docker ebs volume
+# crate the docker ebs volume
 module "ebs" {
   source            = "ebs/"
   availability_zone = "us-east-1a"
