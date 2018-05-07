@@ -16,7 +16,6 @@ module "alb" {
   pub_subnets              = "${var.pub_subnets}"
   env_type                 = "${var.env_type}"
   https_target_group_name  = "${local.tfe_name}-https-target-group"
-  config_target_group_name = "${local.tfe_name}-config-target-group"
   aws_lb_target_group_vpc  = "${var.pub_access_vpc_id}"
   target_instance_id       = "${module.lx-instance.watchmaker-lx-instance-id}"
   r53_zone_id              = "${module.dns.zone_id}"
