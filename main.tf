@@ -61,7 +61,7 @@ data "aws_ami" "centos7" {
 
 # create the instance
 module "lx-instance" {
-  source = "${var.template_source}"
+  source = "git::https://github.com/plus3it/terraform-aws-watchmaker//modules/lx-instance/"
 
   Name             = "${local.tfe_name}-lx-instance"
   AmiId            = "${data.aws_ami.centos7.image_id}"
@@ -82,6 +82,6 @@ module "ebs" {
   availability_zone = "us-east-1a"
   vol_size          = "40"
   vol_name          = "${local.tfe_name}"
-  dev_name          = "/dev/xvdg"
+  dev_name          = "${var.ebs_dev_name}"
   instance_id       = "${module.lx-instance.watchmaker-lx-instance-id}"
 }
