@@ -76,7 +76,7 @@ module "lx-instance" {
   SubnetId         = "${var.priv_subnet}"
 }
 
-# crate the docker ebs volume
+# create the docker ebs volume
 module "ebs" {
   source            = "ebs/"
   availability_zone = "us-east-1a"
