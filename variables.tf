@@ -58,3 +58,8 @@ variable "ebs_dev_name" {
   default     = "/dev/xvdg"
   description = "block storage device name"
 }
+
+variable "ebs_dev_size" {
+  default     = "40"
+  description = "size in GB of the ebs volume"
+}

@@ -1,31 +1,71 @@
 #!/bin/bash
 
+# add MidServer Pulbic key
+
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOKe6oesuIF0nUCYZ+PAVm6L/Pes0Tapr++zksPFUMJm+pqtmYElO3wF46brND4lHGIHJp7mmgVESam7U7VHYT/UfTGBYr4LHU+ylEFjNuwr9RspE5wOK0fQ0eyUMJE5jU/LLzP+A+34dYMHDWm4R7vtRRZqb9krHO5UqXsibK0wHH3qCBq/szx8ilkNNyiQMIzr8xwDOr6lPNQM9VT5V9ZlXF2KQPqb8r4fFWllZZ1mYQhTeCJAN1CMK2Yu5WDC+eilO8zCoGG/TkmVwLFMLBPJTxzelA+le2JkhWpukiJRnxJwpdIcfeFYIkt8zAZDSOSrxKs2WG/D36N54fg33n linux-mid-server" >> ~/.ssh/authorized_keys
+
 # update yum
-sudo yum -update
+yum -update
 
 ## install required packages
-sudo yum install -y yum-utils \
+yum install -y yum-utils \
   device-mapper-persistent-data \
   lvm2
 
 ## set target docker repository to stable
-sudo yum-config-manager \
+yum-config-manager \
     --add-repo \
     https://download.docker.com/linux/centos/docker-ce.repo
 
 # install the latest version of docker
 yum -y install docker-ce-17.06.2.ce
 
-# start docker
-systemctl start docker
-
 # ensure docker starts on reboot
 systemctl enable docker
 
 # create docker group and add DOCKER_USER
-sudo usermod -aG docker maintuser
+usermod -aG docker maintuser
 
 # add required ports to firewall
 # selinux causes firewalld updates to hang during cfn-init
-firewall-offline-cmd --direct --add-rule ipv4 filter INPUT_direct 50 -p tcp -m tcp --dport 443 -j ACCEPT
-firewall-cmd --restart
+firewall-offline-cmd --zone=public --add-port=9870-9890/tcp
+firewall-offline-cmd --zone=public --add-port=443/tcp
+firewall-offline-cmd --zone=public --add-port=80/tcp
+firewall-offline-cmd --zone=public --add-port=8800/tcp
+
+systemctl restart firewalld
+
+# https://docs.docker.com/storage/storagedriver/device-mapper-driver/#manage-devicemapper
+
+pvcreate /dev/xvdg
+vgcreate docker /dev/xvdg
+lvcreate --wipesignatures y -n thinpool docker -l 95%VG
+lvcreate --wipesignatures y -n thinpoolmeta docker -l 1%VG
+lvconvert -y \
+--zero n \
+-c 512K \
+--thinpool docker/thinpool \
+--poolmetadata docker/thinpoolmeta
+
+touch /etc/lvm/profile/docker-thinpool.profile
+echo "activation {
+  thin_pool_autoextend_threshold=80
+  thin_pool_autoextend_percent=20
+}" > /etc/lvm/profile/docker-thinpool.profile
+
+lvchange --metadataprofile docker-thinpool docker/thinpool
+lvs -o+seg_monitor
+
+mkdir -p /etc/docker/
+touch  /etc/docker/daemon.json
+echo "{
+    \"storage-driver\": \"devicemapper\",
+    \"storage-opts\": [
+    \"dm.thinpooldev=/dev/mapper/docker-thinpool\",
+    \"dm.use_deferred_removal=true\",
+    \"dm.use_deferred_deletion=true\"
+    ]
+}" > /etc/docker/daemon.json
+
+systemctl start docker
+service docker start

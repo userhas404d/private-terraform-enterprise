@@ -80,14 +80,6 @@ module "tfe_instance" {
   instance_role          = "${var.instance_role}"
   vpc_security_group_ids = "${module.sg.private_sg_id}"
   subnet_id              = "${var.priv_subnet}"
-}
-
-# crate the docker ebs volume
-module "ebs" {
-  source            = "ebs/"
-  availability_zone = "us-east-1a"
-  vol_size          = "40"
-  vol_name          = "${local.tfe_name}"
-  dev_name          = "${var.ebs_dev_name}"
-  instance_id       = "${module.tfe_instance.instance_id}"
+  ebs_dev_name           = "${var.ebs_dev_name}"
+  ebs_dev_size           = "${var.ebs_dev_size}"
 }

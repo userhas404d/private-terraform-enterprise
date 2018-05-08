@@ -5,3 +5,5 @@ variable "key_name" {}
 variable "vpc_security_group_ids" {}
 variable "subnet_id" {}
 variable "instance_role" {}
+variable "ebs_dev_name" {}
+variable "ebs_dev_size" {}
