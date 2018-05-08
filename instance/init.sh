@@ -18,7 +18,8 @@ yum-config-manager \
     https://download.docker.com/linux/centos/docker-ce.repo
 
 # install the latest version of docker
-yum -y install docker-ce-17.06.2.ce
+# yum -y install docker-ce-17.06.2.ce
+yum -y install docker-ce
 
 # ensure docker starts on reboot
 systemctl enable docker
@@ -32,6 +33,11 @@ firewall-offline-cmd --zone=public --add-port=9870-9890/tcp
 firewall-offline-cmd --zone=public --add-port=443/tcp
 firewall-offline-cmd --zone=public --add-port=80/tcp
 firewall-offline-cmd --zone=public --add-port=8800/tcp
+
+# firewall-offline-cmd --zone=internal --add-port=9870-9890/tcp
+# firewall-offline-cmd --zone=internal --add-port=443/tcp
+# firewall-offline-cmd --zone=internal --add-port=80/tcp
+# firewall-offline-cmd --zone=internal --add-port=8800/tcp
 
 systemctl restart firewalld
 
@@ -69,3 +75,11 @@ echo "{
 
 systemctl start docker
 service docker start
+
+# https://github.com/moby/moby/issues/16137
+nmcli connection modify docker0 connection.zone trusted
+systemctl stop NetworkManager.service
+firewall-offline-cmd --zone=trusted --change-interface=docker0
+systemctl start NetworkManager.service
+nmcli connection modify docker0 connection.zone trusted
+systemctl restart docker.service
