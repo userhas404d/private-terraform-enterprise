@@ -10,21 +10,23 @@ locals {
 
 # create the alb, associated target groups, and certificate
 module "alb" {
-  source                   = "alb/"
-  alb_name                 = "${local.tfe_name}-alb"
-  pub_access_sg            = "${var.pub_access_sg}"
-  pub_subnets              = "${var.pub_subnets}"
-  env_type                 = "${var.env_type}"
-  https_target_group_name  = "${local.tfe_name}-https-target-group"
-  aws_lb_target_group_vpc  = "${var.pub_access_vpc_id}"
-  target_instance_id       = "${module.lx-instance.watchmaker-lx-instance-id}"
-  r53_zone_id              = "${module.dns.zone_id}"
-  domain_name              = "${local.domain_name}"
+  source = "alb/"
+
+  alb_name                = "${local.tfe_name}-alb"
+  pub_access_sg           = "${var.pub_access_sg}"
+  pub_subnets             = "${var.pub_subnets}"
+  env_type                = "${var.env_type}"
+  https_target_group_name = "${local.tfe_name}-https-target-group"
+  aws_lb_target_group_vpc = "${var.pub_access_vpc_id}"
+  target_instance_id      = "${module.tfe_instance.instance_id}"
+  r53_zone_id             = "${module.dns.zone_id}"
+  domain_name             = "${local.domain_name}"
 }
 
 # create the associated a record for the alb
 module "dns" {
-  source          = "dns/"
+  source = "dns/"
+
   alias_name      = "${var.alias_name}"
   target_r53_zone = "${local.target_r53_zone}"
   alb_dns_name    = "${module.alb.dns_name}"
@@ -33,7 +35,8 @@ module "dns" {
 
 # create the private sg
 module "sg" {
-  source                = "sg/"
+  source = "sg/"
+
   priv_sg_name          = "${local.tfe_name}-private-sg"
   priv_sg_desc          = "${var.alias_name} ${var.env_type} private sg"
   vpc_id                = "${var.priv_access_vpc_id}"
@@ -67,19 +70,16 @@ data "aws_ami" "centos7" {
 }
 
 # create the instance
-module "lx-instance" {
-  source = "git::https://github.com/plus3it/terraform-aws-watchmaker//modules/lx-instance/"
+module "tfe_instance" {
+  source = "instance/"
 
-  Name             = "${local.tfe_name}-lx-instance"
-  AmiId            = "${data.aws_ami.centos7.image_id}"
-  AmiDistro        = "CentOS"
-  AppVolumeSize    = "40"
-  AppScriptUrl     = "${var.appscript_url}"
-  KeyPairName      = "${var.key_pair}"
-  InstanceType     = "${var.instance_type}"
-  InstanceRole     = "${var.instance_role}"
-  SecurityGroupIds = "${module.sg.private_sg_id}"
-  SubnetId         = "${var.priv_subnet}"
+  instance_name          = "${local.tfe_name}-tfe_instance"
+  ami_id                 = "${data.aws_ami.centos7.image_id}"
+  key_name               = "${var.key_pair}"
+  instance_type          = "${var.instance_type}"
+  instance_role          = "${var.instance_role}"
+  vpc_security_group_ids = "${module.sg.private_sg_id}"
+  subnet_id              = "${var.priv_subnet}"
 }
 
 # crate the docker ebs volume
@@ -89,5 +89,5 @@ module "ebs" {
   vol_size          = "40"
   vol_name          = "${local.tfe_name}"
   dev_name          = "${var.ebs_dev_name}"
-  instance_id       = "${module.lx-instance.watchmaker-lx-instance-id}"
+  instance_id       = "${module.tfe_instance.instance_id}"
 }

@@ -36,7 +36,7 @@ variable "sg_allow_inbound_from" {
   description = "id of the securitygroup to allow access from"
 }
 
-# lx-instance
+# instance
 variable "ami_id" {}
 
 variable "instance_role" {}
@@ -48,6 +48,10 @@ variable "instance_type" {
 variable "key_pair" {}
 variable "priv_subnet" {}
 variable "appscript_url" {}
+
+variable "template_file" {
+  default = "./init.tpl"
+}
 
 # docker ebs volume
 variable "ebs_dev_name" {
