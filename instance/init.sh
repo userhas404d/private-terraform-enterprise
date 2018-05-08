@@ -34,11 +34,6 @@ firewall-offline-cmd --zone=public --add-port=443/tcp
 firewall-offline-cmd --zone=public --add-port=80/tcp
 firewall-offline-cmd --zone=public --add-port=8800/tcp
 
-# firewall-offline-cmd --zone=internal --add-port=9870-9890/tcp
-# firewall-offline-cmd --zone=internal --add-port=443/tcp
-# firewall-offline-cmd --zone=internal --add-port=80/tcp
-# firewall-offline-cmd --zone=internal --add-port=8800/tcp
-
 systemctl restart firewalld
 
 # https://docs.docker.com/storage/storagedriver/device-mapper-driver/#manage-devicemapper
@@ -82,4 +77,45 @@ systemctl stop NetworkManager.service
 firewall-offline-cmd --zone=trusted --change-interface=docker0
 systemctl start NetworkManager.service
 nmcli connection modify docker0 connection.zone trusted
-systemctl restart docker.service
+systemctl restart docker.servicer
+
+# download the tfe license file
+aws s3 cp s3://tfe-startup-scripts/plus3-it.rli tmp/license.rli
+
+# create replicated unattended installer config
+cat > /etc/replicated.conf <<EOF
+{
+  "DaemonAuthenticationType": "password",
+  "DaemonAuthenticationPassword": "ptfe-pwd",
+  "TlsBootstrapType": "self-signed",
+  "LogLevel": "info",
+  "ImportSettingsFrom": "/tmp/replicated-settings.json",
+  "LicenseFileLocation": "/tmp/license.rli"
+  "BypassPreflightChecks": true
+}
+EOF
+cat > /tmp/replicated-settings.json <<EOF
+{
+  "hostname": {
+    "value": ""
+  }
+  "installation_type": {
+    "value": "production"
+  },
+  "production_type": {
+    "value": "disk"
+  },
+  "disk_path": {
+    "value": "/data"
+  },
+  "letsencrypt_auto": {
+    "value": "1"
+  },
+  "letsencrypt_email": {
+    "value": "null@null.com"
+  },
+}
+EOF
+
+curl https://install.terraform.io/ptfe/stable > tmp/tfe-install.sh
+chmod +x tmp/tfe-install.sh && ./tmp/tfe-install.sh no-proxy
