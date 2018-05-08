@@ -16,6 +16,30 @@ resource "aws_lb" "public" {
   }
 }
 
+# nothing attached to this target group
+resource "aws_lb_target_group" "blackhole" {
+  name     = "blackhole"
+  port     = 443
+  protocol = "HTTPS"
+  vpc_id   = "${var.aws_lb_target_group_vpc}"
+}
+
+# forward requests for url with /admin to black hole
+resource "aws_lb_listener_rule" "blackhole" {
+  listener_arn = "${aws_lb_listener.frontend_https.arn}"
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.blackhole.arn}"
+  }
+
+  condition {
+    field  = "path-pattern"
+    values = ["/admin*"]
+  }
+}
+
 resource "aws_lb_target_group" "tfe_https" {
   name     = "${var.https_target_group_name}"
   port     = 443
